@@ -1,0 +1,105 @@
+\documentclass[a4paper, 12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\usepackage{polski}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{etoolbox,refcount}
+\usepackage{multicol}
+\usepackage{multirow}
+\usepackage{fancyhdr}
+\usepackage{listings}
+\usepackage{array}
+\usepackage{textcomp}
+\usepackage{listings}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{color}
+\usepackage{hyperref}
+
+\usepackage{tikz}
+\usetikzlibrary{calc,through,backgrounds,positioning}
+
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+
+\lstset{ %
+	backgroundcolor=\color{white},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}; should come as last argument
+	basicstyle=\tiny,        % the size of the fonts that are used for the code
+	breakatwhitespace=false,         % sets if automatic breaks should only happen at whitespace
+	breaklines=true,                 % sets automatic line breaking
+	captionpos=b,                    % sets the caption-position to bottom
+	commentstyle=\color{mygreen},    % comment style
+	deletekeywords={...},            % if you want to delete keywords from the given language
+	escapeinside={\%*}{*)},          % if you want to add LaTeX within your code
+	extendedchars=true,              % lets you use non-ASCII characters; for 8-bits encodings only, does not work with UTF-8
+	frame=single,	                   % adds a frame around the code
+	keepspaces=true,                 % keeps spaces in text, useful for keeping indentation of code (possibly needs columns=flexible)
+	keywordstyle=\color{blue},       % keyword style
+	language=Octave,                 % the language of the code
+	morekeywords={*,...},           % if you want to add more keywords to the set
+	numbers=left,                    % where to put the line-numbers; possible values are (none, left, right)
+	numbersep=5pt,                   % how far the line-numbers are from the code
+	numberstyle=\tiny\color{mygray}, % the style that is used for the line-numbers
+	rulecolor=\color{black},         % if not set, the frame-color may be changed on line-breaks within not-black text (e.g. comments (green here))
+	showspaces=false,                % show spaces everywhere adding particular underscores; it overrides 'showstringspaces'
+	showstringspaces=false,          % underline spaces within strings only
+	showtabs=false,                  % show tabs within strings adding particular underscores
+	stepnumber=2,                    % the step between two line-numbers. If it's 1, each line will be numbered
+	stringstyle=\color{mymauve},     % string literal style
+	tabsize=1,	                   % sets default tabsize to 2 spaces
+	title=\lstname                   % show the filename of files included with \lstinputlisting; also try caption instead of title
+}
+
+\newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{C}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\title{\Huge{Koncepcja projektu na przedmiot ZMPSR: Obsługa kodeka audio na ZyboZ7-10}}
+\author{Dominik Baljon, Marcin Śladowski}
+\date{}
+\newgeometry{left=2.5cm, right=2.5cm, bottom=2.75cm, top=2.75cm}
+
+\begin{document}
+\maketitle
+
+\section{Wprowadzenie}
+W ramach projektu powstał pomysł zrealizowania obsługi kodeka audio dostępnego na Zybo, w celu umożliwienia odtwarzania ścieżek audio znajdujących się na karcie SD. Możliwe rozwinięcia (po zaimplementowaniu podstawowej funkcjonalności) o nagrywanie dźwięku, obliczania widma częstotliwościowego wraz z jego prezentacją (LED-y, przesłanie po UART w celu prezentacji).
+Kodek znajdujący się na płytce drukowanej to SSM2603 firmy \textit{Analog Devices}. Powyższy kodek posiada interfejsy I2C oraz I2S oraz wejście zegara.
+
+\section{Podział zadań}
+Znakiem * zostały oznaczone zadania w przypadku rozwinięcia projektu.
+\subsection{Strona FPGA}
+\begin{itemize}
+	\item wysyłanie próbek audio do kodeka przy wykorzystaniu I2S. Możliwe rozwinięcie do odbierania próbek
+	\item komunikacja UART ze zdalną stacją umożliwiająca ustawienie parametrów odtwarzania, nagrywania ścieżek audio
+	\item konfiguracja kodeka przy pomocy interfejsu I2C
+	\item odczyt próbek audio z pamięci (DMA) po umieszczeniu ich tam przez procesor. Ewentualny zapis próbek do pamięci przy nagrywaniu. Konieczna odpowiednia synchronizacja z częścią procesorową
+	\item generacja sygnału zegarowego dla kodeka audio
+	\item odbiór informacji o ścieżkach audio znajdujących się na karcie SD oraz przesłanie ich przy pomocy UART-a
+	\item odbiór i odpowiednia reakcja na komendy \textit{play}, \textit{pause}, \textit{stop}, \textit{next}, \textit{previous} przesyłane poprzez UART
+	\item[*] obliczenie widma częstotliwościowego dla odtwarzanych bądź nagrywanych ścieżek audio
+	\item[*] przestawienie wyników obliczenia widma częstotliwościowego na Led-ch bądź przesyłanie przy pomocy UART-a do PC, który zaprezentuje wyniki
+\end{itemize}
+
+\subsection{Strona procesora}
+\begin{itemize}
+	\item odczyt plików audio z karty SD, ewentualne przetworzenie do odpowiedniego formatu
+	\item umieszczenie próbek audio w pamięci dostępnej dla części FPGA. Konieczna odpowiednia synchronizacja z częścią procesorową.
+	\item odbiór informacji od części FPGA w ramach zmian ścieżek dźwiękowych, zatrzymać itd.
+\end{itemize}
+
+Na poniższym rysunku przedstawiono schemat działania. Przerywanymi liniami zaznaczone elementy w przypadku rozszerzenia.
+
+\begin{figure}[!ht]
+	\centerline{\includegraphics[scale=1]{img/ZYBO_block_diagram2.pdf}}
+	\caption{Schemat działania}
+\end{figure}
+
+\section{Podsumowanie}
+Realizacja takiego projektu pozwoli na lepsze zrozumienie przetwarzania audio, synchronizacji częściami układów Zynq-7000 ARM/FPGA oraz zarządzania, dostępem do pamięci.
+
+
+
+\end{document}
